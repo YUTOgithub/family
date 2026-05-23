@@ -1,6 +1,6 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 function buildPrompt({ title, text, eventFields, url }) {
   const fieldLines = Object.entries(eventFields || {})
@@ -51,13 +51,10 @@ function parsePosts(content) {
 async function generatePosts(scraped) {
   const prompt = buildPrompt(scraped);
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-5',
-    max_tokens: 1024,
-    messages: [{ role: 'user', content: prompt }],
-  });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const result = await model.generateContent(prompt);
+  const content = result.response.text();
 
-  const content = message.content[0].text;
   const posts = parsePosts(content);
 
   if (posts.length === 0) {
